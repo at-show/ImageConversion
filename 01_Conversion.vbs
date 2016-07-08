@@ -1,5 +1,10 @@
 Option Explicit
 
+'# 環境に依存する
+Const prgAlZip = "C:\Program Files (x86)\ESTsoft\AlZip\ALZipCon.exe"
+Const prgPDFconv = "L:\soft\xpdfbin-win-3.03\bin64\pdftoppm.exe"
+Const prgImageMagick = "C:\Program Files\ImageMagick-6.8.1-Q16\mogrify.exe"
+
 Dim fso, folder, file, subFolder
 Dim objWshShell
 
@@ -9,9 +14,6 @@ Set folder = fso.GetFolder(objWshShell.CurrentDirectory)
 filelist(folder)
 Set objWshShell = Nothing
 Set fso = Nothing
-
-
-
 
 Sub filelist(folder)
   For Each file In folder.Files
@@ -44,8 +46,7 @@ End Sub
 '# ４：圧縮
 '# ５：元となった圧縮ファイルの削除
 Sub henkan(dir, name)
-  Dim exe, filepath, resizefile, skipfile, folder
-  exe = "C:\Program Files (x86)\ESTsoft\AlZip\ALZipCon.exe"
+  Dim filepath, resizefile, skipfile, folder
   filepath = dir & "\" & name
   resizefile = dir & "\[resize]" & Left(name,InstrRev(name,".") - 1) & ".zip"
   skipfile = dir & "\[inzip]" & Left(name,InstrRev(name,".") - 1) & ".zip"
@@ -61,7 +62,7 @@ Sub henkan(dir, name)
 
   ' tempフォルダ作成＆解凍
   fso.CreateFolder("$$temp$$")
-  Call objWshShell.Run("""" & exe & """ -x -xf """ & filepath & """ $$temp$$", 0, True)
+  Call objWshShell.Run("""" & prgAlZip & """ -x -xf """ & filepath & """ $$temp$$", 0, True)
   Set folder = fso.GetFolder(dir & "\$$temp$$")
   If SearchZip(folder) = False Then
     ' 圧縮ファイルが無い場合のみ実行
@@ -77,7 +78,7 @@ Sub henkan(dir, name)
     PicDel(folder)
 
     ' 圧縮
-    Call objWshShell.Run("""" & exe & """ -a -nq * """ & resizefile & """", 0, True)
+    Call objWshShell.Run("""" & prgAlZip & """ -a -nq * """ & resizefile & """", 0, True)
 
     ' ファイル存在チェック
     If fso.FileExists(resizefile) = True Then
@@ -172,16 +173,15 @@ End Sub
 
 '# PDF変換処理
 Sub PdfConvert(folder)
-  Dim resize, conv, pos, objExec
-  conv = "L:\soft\xpdfbin-win-3.03\bin64\pdftoppm.exe"
+  Dim resize, pos, objExec
 
   '# PDFの場合ppmに変換する
   For Each file In folder.Files
     pos = InStrRev(file.Name, ".")
 
     If LCase(Mid(file.Name, pos + 1)) = "pdf" Then
-      WScript.Echo "  →pdf to ppm : " & conv & " """ & folder.Path & "\" & file.Name & """ ""out"""
-      Call objWshShell.Run(conv & " """ & folder.Path & "\" & file.Name & """ ""out""", 0, True)
+      WScript.Echo "  →pdf to ppm : " & prgPDFconv & " """ & folder.Path & "\" & file.Name & """ ""out"""
+      Call objWshShell.Run(prgPDFconv & " """ & folder.Path & "\" & file.Name & """ ""out""", 0, True)
     End If
   Next
 
@@ -193,8 +193,7 @@ End Sub
 
 '# 画像変換処理
 Sub PicConvert(folder)
-  Dim resize, conv, pos, objExec
-  resize = "C:\Program Files\ImageMagick-6.8.1-Q16\mogrify.exe"
+  Dim pos, objExec
 
   '# 画像ファイルを変換する
   For Each file In folder.Files
@@ -207,7 +206,7 @@ Sub PicConvert(folder)
        LCase(Mid(file.Name, pos + 1)) = "jpeg" Or _
        LCase(Mid(file.Name, pos + 1)) = "gif" Then
 
-       Set objExec = objWshShell.Exec("""" & resize & """ -quality 75 -resize 2000x1024 -format jpg """ & folder.Path & "\" & file.Name & """")
+       Set objExec = objWshShell.Exec("""" & prgImageMagick & """ -quality 75 -resize 2000x1024 -format jpg """ & folder.Path & "\" & file.Name & """")
        Do While objExec.Status = 0
          WScript.Sleep 10
        Loop
