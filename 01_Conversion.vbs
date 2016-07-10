@@ -1,21 +1,23 @@
 Option Explicit
 
-'# ŠÂ‹«‚ÉˆË‘¶‚·‚é
+'# ç’°å¢ƒã«ä¾å­˜ã™ã‚‹
 Const prgAlZip = "C:\Program Files (x86)\ESTsoft\AlZip\ALZipCon.exe"
 Const prgPDFconv = "L:\soft\xpdfbin-win-3.03\bin64\pdftoppm.exe"
 Const prgImageMagick = "C:\Program Files\ImageMagick-6.8.1-Q16\mogrify.exe"
 
-Dim fso, folder, file, subFolder
-Dim objWshShell
+Dim fso, folder, file, subFolder, objWshShell
 
 Set objWshShell = CreateObject("WScript.Shell")
 Set fso = WScript.CreateObject("Scripting.FileSystemObject")
 Set folder = fso.GetFolder(objWshShell.CurrentDirectory)
-filelist(folder)
+FileList(folder)
 Set objWshShell = Nothing
 Set fso = Nothing
 
-Sub filelist(folder)
+'##############################
+'# ãƒ•ã‚¡ã‚¤ãƒ«åˆ—æŒ™å‡¦ç†
+'##############################
+Sub FileList(folder)
   For Each file In folder.Files
     Dim pos
     pos = InStrRev(file.Name, ".")
@@ -25,91 +27,95 @@ Sub filelist(folder)
 
        If InStr(file.Name, "[resize]") = 0 And _
           InStr(file.Name, "[inzip]") = 0 Then
-         ' ƒŠƒTƒCƒYÏ‚İAinzipˆÈŠO‚Ìƒtƒ@ƒCƒ‹‚ğ‘ÎÛ‚Æ‚·‚é
-         Call henkan(folder.Path, file.Name)
+         ' ãƒªã‚µã‚¤ã‚ºæ¸ˆã¿ã€inzipä»¥å¤–ã®ãƒ•ã‚¡ã‚¤ãƒ«ã‚’å¯¾è±¡ã¨ã™ã‚‹
+         Call Convert(folder.Path, file.Name)
          WScript.Sleep(3000)
        End If
     End If
   Next
 
+  ' å†èµ·
   For Each subFolder In folder.SubFolders
-    filelist(subFolder)
+    FileList
+t(subFolder)
   Next
 End Sub
 
-
-'# ‰æ‘œ•ÏŠ·ˆ—
-'# ˆ³kƒtƒ@ƒCƒ‹‚ğó‚¯æ‚èˆÈ‰º‚Ìˆ—‚ğs‚¢‚Ü‚·B
-'# ‚PFtempƒtƒHƒ‹ƒ_‚Ìì¬
-'# ‚QF‰ğ“€
-'# ‚RF‰æ‘œ•ÏŠ·
-'# ‚SFˆ³k
-'# ‚TFŒ³‚Æ‚È‚Á‚½ˆ³kƒtƒ@ƒCƒ‹‚Ìíœ
-Sub henkan(dir, name)
-  Dim filepath, resizefile, skipfile, folder
-  filepath = dir & "\" & name
+'##############################
+'# ç”»åƒå¤‰æ›å‡¦ç†
+'# åœ§ç¸®ãƒ•ã‚¡ã‚¤ãƒ«ã‚’å—ã‘å–ã‚Šä»¥ä¸‹ã®å‡¦ç†ã‚’è¡Œã„ã¾ã™ã€‚
+'# 1ï¼štempãƒ•ã‚©ãƒ«ãƒ€ã®ä½œæˆ
+'# 2ï¼šè§£å‡
+'# 3ï¼šç”»åƒå¤‰æ›
+'# 4ï¼šåœ§ç¸®
+'# 5ï¼šå…ƒã¨ãªã£ãŸåœ§ç¸®ãƒ•ã‚¡ã‚¤ãƒ«ã®å‰Šé™¤
+'##############################
+Sub Convert(dir, name)
+  Dim targetFilePath, tmpDirPath, resizefile, skipfile, folder
+  targetFilePath = dir & "\" & name
+  tmpDirPath = dir & "\$$temp$$"
   resizefile = dir & "\[resize]" & Left(name,InstrRev(name,".") - 1) & ".zip"
   skipfile = dir & "\[inzip]" & Left(name,InstrRev(name,".") - 1) & ".zip"
-  WScript.Echo "[" & Now() & "] " & filepath
+  WScript.Echo "[" & Now() & "] " & targetFilePath
 
   objWshShell.CurrentDirectory = dir
 
-  ' tempƒtƒHƒ‹ƒ_‚ª‘¶İ‚·‚ê‚Îíœ
-  If fso.FolderExists(dir & "\$$temp$$") = True Then
-    WScript.Echo "  ¨temp delete : " & dir & "\$$temp$$"
-    Call fso.DeleteFolder(dir & "\$$temp$$", True)
+  ' tempãƒ•ã‚©ãƒ«ãƒ€ãŒå­˜åœ¨ã™ã‚Œã°å‰Šé™¤
+  If fso.FolderExists(tmpDirPath) = True Then
+    WScript.Echo "  â†’temp delete : " & tmpDirPath
+    Call fso.DeleteFolder(tmpDirPath, True)
   End If
 
-  ' tempƒtƒHƒ‹ƒ_ì¬•‰ğ“€
+  ' tempãƒ•ã‚©ãƒ«ãƒ€ä½œæˆï¼†è§£å‡
   fso.CreateFolder("$$temp$$")
-  Call objWshShell.Run("""" & prgAlZip & """ -x -xf """ & filepath & """ $$temp$$", 0, True)
-  Set folder = fso.GetFolder(dir & "\$$temp$$")
+  Call objWshShell.Run("""" & prgAlZip & """ -x -xf """ & targetFilePath & """ $$temp$$", 0, True)
+  Set folder = fso.GetFolder(tmpDirPath)
   If SearchZip(folder) = False Then
-    ' ˆ³kƒtƒ@ƒCƒ‹‚ª–³‚¢ê‡‚Ì‚İÀs
-    ' “Ç‚İæ‚èê—p‰ğœ
+    ' åœ§ç¸®ãƒ•ã‚¡ã‚¤ãƒ«ãŒç„¡ã„å ´åˆã®ã¿å®Ÿè¡Œ
+    ' èª­ã¿å–ã‚Šå°‚ç”¨è§£é™¤
     Free(folder)
 
-    ' tempƒtƒHƒ‹ƒ_‚ÖˆÚ“®
-    objWshShell.CurrentDirectory = dir & "\$$temp$$"
+    ' tempãƒ•ã‚©ãƒ«ãƒ€ã¸ç§»å‹•
+    objWshShell.CurrentDirectory = tmpDirPath
 
-    ' ‰æ‘œ•ÏŠ·
+    ' ç”»åƒå¤‰æ›
     PdfConvert(folder)
     PicConvert(folder)
     PicDel(folder)
 
-    ' ˆ³k
+    ' åœ§ç¸®
     Call objWshShell.Run("""" & prgAlZip & """ -a -nq * """ & resizefile & """", 0, True)
 
-    ' ƒtƒ@ƒCƒ‹‘¶İƒ`ƒFƒbƒN
+    ' ãƒ•ã‚¡ã‚¤ãƒ«å­˜åœ¨ãƒã‚§ãƒƒã‚¯
     If fso.FileExists(resizefile) = True Then
-      ' •ÏŠ·‚É¬Œ÷‚µ‚Ä‚¢‚½‚çŒ³ƒtƒ@ƒCƒ‹‚ğíœ
-      Call fso.DeleteFile(filepath, True)
+      ' å¤‰æ›ã«æˆåŠŸã—ã¦ã„ãŸã‚‰å…ƒãƒ•ã‚¡ã‚¤ãƒ«ã‚’å‰Šé™¤
+      Call fso.DeleteFile(targetFilePath, True)
     Else
-      WScript.Echo "  ¨Not Exists : " & resizefile
+      WScript.Echo "  â†’Not Exists : " & resizefile
     End If
 
   Else
-    ' ˆ³kƒtƒ@ƒCƒ‹‚ª‘¶İ‚µ‚½ê‡‚ÍƒŠƒl[ƒ€‚µ‚Ü‚·B
-    WScript.Echo "  ¨skip : " & filepath
-    Call fso.MoveFile(filepath, skipfile)
+    ' åœ§ç¸®ãƒ•ã‚¡ã‚¤ãƒ«ãŒå­˜åœ¨ã—ãŸå ´åˆã¯ãƒªãƒãƒ¼ãƒ ã—ã¾ã™ã€‚
+    WScript.Echo "  â†’skip : " & targetFilePath
+    Call fso.MoveFile(targetFilePath, skipfile)
   End If
 
-  ' tempƒtƒHƒ‹ƒ_‚©‚çˆÚ“®
+  ' tempãƒ•ã‚©ãƒ«ãƒ€ã‹ã‚‰ç§»å‹•
   objWshShell.CurrentDirectory = dir
 
-  ' tempƒtƒHƒ‹ƒ_íœ
+  ' tempãƒ•ã‚©ãƒ«ãƒ€å‰Šé™¤
   On Error Resume Next
-  fso.DeleteFolder dir & "\$$temp$$", True
+  fso.DeleteFolder tmpDirPath, True
   If Err.Number <> 0 Then
-    WScript.Echo "  ¨Temp Dir Delete Error : " & dir & "\$$temp$$"
+    WScript.Echo "  â†’Temp Dir Delete Error : " & targetFilePath
   End If
   On Error GoTo 0
 
 End Sub
 
 
-'# ˆ³kƒtƒ@ƒCƒ‹ŒŸõˆ—
-'# ˆ³kƒtƒ@ƒCƒ‹‚ªŠÜ‚Ü‚ê‚Ä‚¢‚é‚©‚Ç‚¤‚©ƒ`ƒFƒbƒN‚µ‚Ü‚·B
+'# åœ§ç¸®ãƒ•ã‚¡ã‚¤ãƒ«æ¤œç´¢å‡¦ç†
+'# åœ§ç¸®ãƒ•ã‚¡ã‚¤ãƒ«ãŒå«ã¾ã‚Œã¦ã„ã‚‹ã‹ã©ã†ã‹ãƒã‚§ãƒƒã‚¯ã—ã¾ã™ã€‚
 Function SearchZip(folder)
   SearchZip = False
 
@@ -121,12 +127,12 @@ Function SearchZip(folder)
        LCase(Mid(file.Name, pos + 1)) = "lzh" Then
 
        SearchZip = True
-       WScript.Echo "  ¨in zip : " & folder.Path & "\" & file.Name
+       WScript.Echo "  â†’in zip : " & folder.Path & "\" & file.Name
        Exit Function
     End If
   Next
 
-  '# Ä‹NŒÄ‚Ño‚µ
+  '# å†èµ·å‘¼ã³å‡ºã—
   For Each subFolder In folder.SubFolders
     If SearchZip(subFolder) = True Then
       SearchZip = True
@@ -136,66 +142,66 @@ Function SearchZip(folder)
 End Function
 
 
-'# ‰æ‘œíœˆ—
-'# [.jpg]ˆÈŠO‚Ì‰æ‘œ‚ğíœ‚µ‚Ü‚·B
+'# ç”»åƒå‰Šé™¤å‡¦ç†
+'# [.jpg]ä»¥å¤–ã®ç”»åƒã‚’å‰Šé™¤ã—ã¾ã™ã€‚
 Sub PicDel(folder)
   For Each file In folder.Files
     Dim pos
     pos = InStrRev(file.Name, ".")
     If LCase(Mid(file.Name, pos + 1)) <> "jpg" Then
 
-       WScript.Echo "  ¨Del : " & folder.Path & "\" & file.Name
+       WScript.Echo "  â†’Del : " & folder.Path & "\" & file.Name
        Call fso.DeleteFile(folder.Path & "\" & file.Name, True)
     End If
   Next
 
-  '# Ä‹NŒÄ‚Ño‚µ
+  '# å†èµ·å‘¼ã³å‡ºã—
   For Each subFolder In folder.SubFolders
     PicDel(subFolder)
   Next
 End Sub
 
 
-'# “Ç‚İæ‚èê—p‰ğœˆ—
+'# èª­ã¿å–ã‚Šå°‚ç”¨è§£é™¤å‡¦ç†
 Sub Free(folder)
   For Each file In folder.Files
     If file.Attributes And 1 Then
-      WScript.Echo "  ¨Free : " & folder.Path & "\" & file.Name
+      WScript.Echo "  â†’Free : " & folder.Path & "\" & file.Name
       file.Attributes = file.Attributes And &HFE
     End If
   Next
 
-  '# Ä‹NŒÄ‚Ño‚µ
+  '# å†èµ·å‘¼ã³å‡ºã—
   For Each subFolder In folder.SubFolders
     Free(subFolder)
   Next
 End Sub
 
-'# PDF•ÏŠ·ˆ—
+'# PDFå¤‰æ›å‡¦ç†
 Sub PdfConvert(folder)
   Dim resize, pos, objExec
 
-  '# PDF‚Ìê‡ppm‚É•ÏŠ·‚·‚é
+  '# PDFã®å ´åˆppmã«å¤‰æ›ã™ã‚‹
   For Each file In folder.Files
     pos = InStrRev(file.Name, ".")
 
     If LCase(Mid(file.Name, pos + 1)) = "pdf" Then
-      WScript.Echo "  ¨pdf to ppm : " & prgPDFconv & " """ & folder.Path & "\" & file.Name & """ ""out"""
+      WScript.Echo "  â†’pdf to ppm : " & prgPDFconv & " """ & folder.Path & "\" & file.Name & """ ""out"""
       Call objWshShell.Run(prgPDFconv & " """ & folder.Path & "\" & file.Name & """ ""out""", 0, True)
     End If
   Next
 
-  '# Ä‹NŒÄ‚Ño‚µ
+  '# å†èµ·å‘¼ã³å‡ºã—
   For Each subFolder In folder.SubFolders
     PdfConvert(subFolder)
   Next
 End Sub
 
-'# ‰æ‘œ•ÏŠ·ˆ—
+'# ç”»åƒå¤‰æ›å‡¦ç†
 Sub PicConvert(folder)
   Dim pos, objExec
 
-  '# ‰æ‘œƒtƒ@ƒCƒ‹‚ğ•ÏŠ·‚·‚é
+  '# ç”»åƒãƒ•ã‚¡ã‚¤ãƒ«ã‚’å¤‰æ›ã™ã‚‹
   For Each file In folder.Files
     pos = InStrRev(file.Name, ".")
 
@@ -214,7 +220,7 @@ Sub PicConvert(folder)
     End If
   Next
 
-  '# Ä‹NŒÄ‚Ño‚µ
+  '# å†èµ·å‘¼ã³å‡ºã—
   For Each subFolder In folder.SubFolders
     PicConvert(subFolder)
   Next
