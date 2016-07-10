@@ -36,8 +36,7 @@ Sub FileList(folder)
 
   ' 再起
   For Each subFolder In folder.SubFolders
-    FileList
-t(subFolder)
+    FileList(subFolder)
   Next
 End Sub
 
@@ -51,11 +50,10 @@ End Sub
 '# 5：元となった圧縮ファイルの削除
 '##############################
 Sub Convert(dir, name)
-  Dim targetFilePath, tmpDirPath, resizefile, skipfile, folder
+  Dim targetFilePath, tmpDirPath, resizedfile, folder
   targetFilePath = dir & "\" & name
   tmpDirPath = dir & "\$$temp$$"
-  resizefile = dir & "\[resize]" & Left(name,InstrRev(name,".") - 1) & ".zip"
-  skipfile = dir & "\[inzip]" & Left(name,InstrRev(name,".") - 1) & ".zip"
+  resizedfile = dir & "\[resize]" & Left(name,InstrRev(name,".") - 1) & ".zip"
   WScript.Echo "[" & Now() & "] " & targetFilePath
 
   objWshShell.CurrentDirectory = dir
@@ -84,20 +82,20 @@ Sub Convert(dir, name)
     DeleteNonImage(folder)
 
     ' 圧縮
-    Call objWshShell.Run("""" & prgAlZip & """ -a -nq * """ & resizefile & """", 0, True)
+    Call objWshShell.Run("""" & prgAlZip & """ -a -nq * """ & resizedfile & """", 0, True)
 
     ' ファイル存在チェック
-    If fso.FileExists(resizefile) = True Then
+    If fso.FileExists(resizedfile) = True Then
       ' 変換に成功していたら元ファイルを削除
       Call fso.DeleteFile(targetFilePath, True)
     Else
-      WScript.Echo "  →Not Exists : " & resizefile
+      WScript.Echo "  →Not Exists : " & resizedfile
     End If
 
   Else
     ' 圧縮ファイルが存在した場合はリネームします。
     WScript.Echo "  →skip : " & targetFilePath
-    Call fso.MoveFile(targetFilePath, skipfile)
+    Call fso.MoveFile(targetFilePath, dir & "\[inzip]" & Left(name,InstrRev(name,".") - 1) & ".zip")
   End If
 
   ' tempフォルダから移動
