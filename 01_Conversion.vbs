@@ -60,7 +60,7 @@ Sub Convert(dir, name)
 
   ' tempフォルダが存在すれば削除
   If fso.FolderExists(tmpDirPath) = True Then
-    WScript.Echo "  →temp delete : " & tmpDirPath
+    WScript.Echo "  ->temp delete : " & tmpDirPath
     Call fso.DeleteFolder(tmpDirPath, True)
   End If
 
@@ -89,12 +89,12 @@ Sub Convert(dir, name)
       ' 変換に成功していたら元ファイルを削除
       Call fso.DeleteFile(targetFilePath, True)
     Else
-      WScript.Echo "  →Not Exists : " & resizedfile
+      WScript.Echo "  ->Not Exists : " & resizedfile
     End If
 
   Else
     ' 圧縮ファイルが存在した場合はリネームします。
-    WScript.Echo "  →skip : " & targetFilePath
+    WScript.Echo "  ->skip : " & targetFilePath
     Call fso.MoveFile(targetFilePath, dir & "\[inzip]" & Left(name,InstrRev(name,".") - 1) & ".zip")
   End If
 
@@ -105,7 +105,7 @@ Sub Convert(dir, name)
   On Error Resume Next
   fso.DeleteFolder tmpDirPath, True
   If Err.Number <> 0 Then
-    WScript.Echo "  →Temp Dir Delete Error : " & targetFilePath
+    WScript.Echo "  ->Temp Dir Delete Error : " & targetFilePath
   End If
   On Error GoTo 0
 
@@ -126,7 +126,7 @@ Function SearchZip(folder)
        LCase(Mid(file.Name, pos + 1)) = "lzh" Then
 
        SearchZip = True
-       WScript.Echo "  →in zip : " & folder.Path & "\" & file.Name
+       WScript.Echo "  ->in zip : " & folder.Path & "\" & file.Name
        Exit Function
     End If
   Next
@@ -151,7 +151,7 @@ Sub DeleteNonImage(folder)
     pos = InStrRev(file.Name, ".")
     If LCase(Mid(file.Name, pos + 1)) <> "jpg" Then
 
-       WScript.Echo "  →Del : " & folder.Path & "\" & file.Name
+       WScript.Echo "  ->Del : " & folder.Path & "\" & file.Name
        Call fso.DeleteFile(folder.Path & "\" & file.Name, True)
     End If
   Next
@@ -169,7 +169,7 @@ End Sub
 Sub ReleaseReadOnly(folder)
   For Each file In folder.Files
     If file.Attributes And 1 Then
-      WScript.Echo "  →ReleaseReadOnly : " & folder.Path & "\" & file.Name
+      WScript.Echo "  ->ReleaseReadOnly : " & folder.Path & "\" & file.Name
       file.Attributes = file.Attributes And &HFE
     End If
   Next
@@ -191,7 +191,7 @@ Sub ConvertPDF(folder)
     pos = InStrRev(file.Name, ".")
 
     If LCase(Mid(file.Name, pos + 1)) = "pdf" Then
-      WScript.Echo "  →pdf to ppm : " & prgPDFconv & " """ & folder.Path & "\" & file.Name & """ ""out"""
+      WScript.Echo "  ->pdf to ppm : " & prgPDFconv & " """ & folder.Path & "\" & file.Name & """ ""out"""
       Call objWshShell.Run(prgPDFconv & " """ & folder.Path & "\" & file.Name & """ ""out""", 0, True)
     End If
   Next
