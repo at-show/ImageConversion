@@ -73,15 +73,15 @@ Sub Convert(dir, name)
   If SearchZip(folder) = False Then
     ' 圧縮ファイルが無い場合のみ実行
     ' 読み取り専用解除
-    Free(folder)
+    ReleaseReadOnly(folder)
 
     ' tempフォルダへ移動
     objWshShell.CurrentDirectory = tmpDirPath
 
     ' 画像変換
-    PdfConvert(folder)
-    PicConvert(folder)
-    PicDel(folder)
+    ConvertPDF(folder)
+    ConvertImage(folder)
+    DeleteNonImage(folder)
 
     ' 圧縮
     Call objWshShell.Run("""" & prgAlZip & """ -a -nq * """ & resizefile & """", 0, True)
@@ -113,9 +113,10 @@ Sub Convert(dir, name)
 
 End Sub
 
-
+'##############################
 '# 圧縮ファイル検索処理
 '# 圧縮ファイルが含まれているかどうかチェックします。
+'##############################
 Function SearchZip(folder)
   SearchZip = False
 
@@ -142,9 +143,11 @@ Function SearchZip(folder)
 End Function
 
 
+'##############################
 '# 画像削除処理
 '# [.jpg]以外の画像を削除します。
-Sub PicDel(folder)
+'##############################
+Sub DeleteNonImage(folder)
   For Each file In folder.Files
     Dim pos
     pos = InStrRev(file.Name, ".")
@@ -157,28 +160,32 @@ Sub PicDel(folder)
 
   '# 再起呼び出し
   For Each subFolder In folder.SubFolders
-    PicDel(subFolder)
+    DeleteNonImage(subFolder)
   Next
 End Sub
 
 
+'##############################
 '# 読み取り専用解除処理
-Sub Free(folder)
+'##############################
+Sub ReleaseReadOnly(folder)
   For Each file In folder.Files
     If file.Attributes And 1 Then
-      WScript.Echo "  →Free : " & folder.Path & "\" & file.Name
+      WScript.Echo "  →ReleaseReadOnly : " & folder.Path & "\" & file.Name
       file.Attributes = file.Attributes And &HFE
     End If
   Next
 
   '# 再起呼び出し
   For Each subFolder In folder.SubFolders
-    Free(subFolder)
+    ReleaseReadOnly(subFolder)
   Next
 End Sub
 
+'##############################
 '# PDF変換処理
-Sub PdfConvert(folder)
+'##############################
+Sub ConvertPDF(folder)
   Dim resize, pos, objExec
 
   '# PDFの場合ppmに変換する
@@ -193,12 +200,14 @@ Sub PdfConvert(folder)
 
   '# 再起呼び出し
   For Each subFolder In folder.SubFolders
-    PdfConvert(subFolder)
+    ConvertPDF(subFolder)
   Next
 End Sub
 
+'##############################
 '# 画像変換処理
-Sub PicConvert(folder)
+'##############################
+Sub ConvertImage(folder)
   Dim pos, objExec
 
   '# 画像ファイルを変換する
@@ -222,6 +231,6 @@ Sub PicConvert(folder)
 
   '# 再起呼び出し
   For Each subFolder In folder.SubFolders
-    PicConvert(subFolder)
+    ConvertImage(subFolder)
   Next
 End Sub
